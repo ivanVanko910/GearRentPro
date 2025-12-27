@@ -186,81 +186,59 @@ public class CreateRentalController {
             Customer customer = customerCombo.getValue();
             LocalDate startDate = startDatePicker.getValue();
             LocalDate endDate = endDatePicker.getValue();
-            
+
             if (equipment == null || category == null || customer == null || startDate == null || endDate == null) {
                 showAlert(Alert.AlertType.WARNING, "Validation Error", "Please fill all fields!");
                 return;
             }
-            
+
             // Validate dates
             if (endDate.isBefore(startDate)) {
                 showAlert(Alert.AlertType.WARNING, "Validation Error", "End date must be after start date!");
                 return;
             }
-            
+
             int rentalDays = (int) java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
             if (rentalDays > 30) {
                 showAlert(Alert.AlertType.WARNING, "Validation Error", "Rental duration cannot exceed 30 days!");
                 return;
             }
-            
-            // Create rental object
-            Rental rental = new Rental();
-            rental.setEquipmentId(equipment.getEquipmentId());
-            rental.setCustomerId(customer.getCustomerId());
-            rental.setBranchId(authService.getCurrentUserBranchId() != null ? 
-                             authService.getCurrentUserBranchId() : 1);
-            rental.setStartDate(startDate);
-            rental.setEndDate(endDate);
-            
+
             // Equipment availability check
             if (!equipmentService.isEquipmentAvailable(equipment.getEquipmentId(), startDate, endDate)) {
                 showAlert(Alert.AlertType.WARNING, "Equipment Unavailable", "The selected equipment is not available for the chosen dates.");
                 return;
             }
 
-            // Create rental in database
-            if (rentalService.createRental(rental, equipment, customer, category)) {
-                String rentalCode = rental.getRentalCode();
+            // Create reservation only (no rental)
+            Reservation reservation = new Reservation();
+            reservation.setReservationCode("RES-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            reservation.setEquipmentId(equipment.getEquipmentId());
+            reservation.setCustomerId(customer.getCustomerId());
+            reservation.setBranchId(authService.getCurrentUserBranchId() != null ? authService.getCurrentUserBranchId() : 1);
+            reservation.setStartDate(startDate);
+            reservation.setEndDate(endDate);
+            reservation.setStatus(Reservation.ReservationStatus.PENDING);
 
-                // This is a direct rental, so create a new reservation record for it
-                try {
-                    Reservation reservation = new Reservation();
-                    reservation.setReservationCode("RES-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-                    reservation.setEquipmentId(equipment.getEquipmentId());
-                    reservation.setCustomerId(customer.getCustomerId());
-                    reservation.setBranchId(rental.getBranchId());
-                    reservation.setStartDate(startDate);
-                    reservation.setEndDate(endDate);
-                    reservation.setStatus(Reservation.ReservationStatus.PENDING); // Direct rentals are auto-confirmed
-
-                    int reservationId = reservationDAO.createReservation(reservation);
-                    if (reservationId > 0) {
-                        // Link the rental to the new reservation
-                        rentalService.updateRentalWithReservationId(rental.getRentalId(), reservationId);
-                    }
-                } catch (SQLException e) {
-                    System.err.println("Warning: Could not create associated reservation for the rental: " + e.getMessage());
-                    // Log this, but don't block the rental creation
-                }
-                
-                showAlert(Alert.AlertType.INFORMATION, "Success", 
-                         "Rental created successfully!\n\n" +
-                         "Rental Code: " + rentalCode + "\n" +
-                         "Customer: " + customer.getCustomerName() + "\n" +
-                         "Equipment: " + equipment.getBrand() + " " + equipment.getModel() + "\n" +
-                         "Dates: " + startDate + " to " + endDate + "\n" +
-                         "Amount: LKR " + rental.getFinalPayableAmount());
-                
+            int reservationId = reservationDAO.createReservation(reservation);
+            if (reservationId > 0) {
+                showAlert(Alert.AlertType.INFORMATION, "Success",
+                        "Reservation created successfully!\n\n" +
+                        "Reservation Code: " + reservation.getReservationCode() + "\n" +
+                        "Customer: " + customer.getCustomerName() + "\n" +
+                        "Equipment: " + equipment.getBrand() + " " + equipment.getModel() + "\n" +
+                        "Dates: " + startDate + " to " + endDate);
                 clearForm();
                 loadCategories();
                 loadCustomers();
+            } else {
+                showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to create reservation.");
             }
-            
+
         } catch (IllegalArgumentException e) {
             showAlert(Alert.AlertType.WARNING, "Validation Error", e.getMessage());
         } catch (SQLException e) {
-            showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to create rental: " + e.getMessage());
+            showAlert(Alert.AlertType.ERROR, "Database Error", "Failed to create reservation: " + e.getMessage());
             e.printStackTrace();
         } catch (Exception e) {
             showAlert(Alert.AlertType.ERROR, "Error", "Unexpected error: " + e.getMessage());
