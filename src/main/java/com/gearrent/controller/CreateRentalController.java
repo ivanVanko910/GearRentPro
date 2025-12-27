@@ -232,7 +232,7 @@ public class CreateRentalController {
                     reservation.setBranchId(rental.getBranchId());
                     reservation.setStartDate(startDate);
                     reservation.setEndDate(endDate);
-                    reservation.setStatus(Reservation.ReservationStatus.CONFIRMED); // Direct rentals are auto-confirmed
+                    reservation.setStatus(Reservation.ReservationStatus.PENDING); // Direct rentals are auto-confirmed
 
                     int reservationId = reservationDAO.createReservation(reservation);
                     if (reservationId > 0) {
