@@ -27,6 +27,8 @@
     
     <!-- Action Buttons -->
     <HBox spacing="10" style="-fx-padding: 10;">
+        <Button onAction="#handleConvertToRental" text="✅ Convert to Rental"
+                style="-fx-padding: 10 25; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #28a745; -fx-text-fill: white; -fx-cursor: hand;"/>
         <Button onAction="#handleCancelReservation" text="❌ Cancel Reservation" 
                 style="-fx-padding: 10 25; -fx-font-size: 12; -fx-font-weight: bold; -fx-background-color: #dc3545; -fx-text-fill: white; -fx-cursor: hand;"/>
     </HBox>
