@@ -336,4 +336,44 @@ public class RentalDAO {
         
         return rental;
     }
+
+    public ResultSet getBranchRevenueReport(LocalDate startDate, LocalDate endDate) throws SQLException {
+        String sql = "SELECT b.branch_name, " +
+                     "COUNT(r.rental_id) as total_rentals, " +
+                     "SUM(r.final_payable_amount) as total_revenue, " +
+                     "SUM(rd.late_fee) as total_late_fees, " +
+                     "SUM(rd.damage_charge) as total_damage_charges " +
+                     "FROM rentals r " +
+                     "JOIN branches b ON r.branch_id = b.branch_id " +
+                     "LEFT JOIN return_details rd ON r.rental_id = rd.rental_id " +
+                     "WHERE r.start_date <= ? AND r.end_date >= ? " +
+                     "GROUP BY b.branch_name";
+
+        Connection conn = DatabaseConfig.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setDate(1, java.sql.Date.valueOf(startDate));
+        stmt.setDate(2, java.sql.Date.valueOf(endDate));
+
+        return stmt.executeQuery();
+    }
+
+    public ResultSet getEquipmentUtilizationReport(int branchId, LocalDate startDate, LocalDate endDate) throws SQLException {
+        String sql = "SELECT e.equipment_code, e.brand, e.model, " +
+                     "SUM(DATEDIFF(r.end_date, r.start_date)) as days_rented, " +
+                     "DATEDIFF(?, ?) as total_days_in_period " +
+                     "FROM rentals r " +
+                     "JOIN equipment e ON r.equipment_id = e.equipment_id " +
+                     "WHERE r.branch_id = ? AND r.start_date <= ? AND r.end_date >= ? " +
+                     "GROUP BY e.equipment_id";
+
+        Connection conn = DatabaseConfig.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setDate(1, java.sql.Date.valueOf(endDate));
+        stmt.setDate(2, java.sql.Date.valueOf(startDate));
+        stmt.setInt(3, branchId);
+        stmt.setDate(4, java.sql.Date.valueOf(startDate));
+        stmt.setDate(5, java.sql.Date.valueOf(endDate));
+
+        return stmt.executeQuery();
+    }
 }

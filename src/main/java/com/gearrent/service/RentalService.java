@@ -90,6 +90,9 @@ public class RentalService {
             throw new IllegalArgumentException("Equipment is not available for selected dates!");
         }
 
+        // Check customer deposit limit
+        checkCustomerDepositLimit(customer, equipment.getSecurityDeposit());
+
         // Calculate pricing
         BigDecimal rentalAmount = pricingService.calculateRentalAmount(equipment, category,
                 rental.getStartDate(), rental.getEndDate());
@@ -175,6 +178,17 @@ public class RentalService {
         int days = DateUtils.getDaysBetween(rental.getStartDate(), rental.getEndDate());
         if (days > MAX_RENTAL_DAYS) {
             throw new IllegalArgumentException("Rental duration cannot exceed 30 days!");
+        }
+    }
+
+    private void checkCustomerDepositLimit(Customer customer, BigDecimal newDeposit) throws SQLException {
+        List<Rental> activeRentals = getActiveRentalsByCustomer(customer.getCustomerId());
+        BigDecimal currentDeposit = activeRentals.stream()
+                .map(Rental::getSecurityDeposit)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (currentDeposit.add(newDeposit).compareTo(customer.getDepositLimit()) > 0) {
+            throw new IllegalArgumentException("Customer deposit limit would be exceeded!");
         }
     }
 }
