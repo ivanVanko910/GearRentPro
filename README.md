@@ -22,8 +22,26 @@ GearRent Pro is a comprehensive, multi-branch equipment rental system designed t
     *   In the `src/main/resources` directory, you will find a file named `config.properties.example`.
     *   Make a copy of this file and rename it to `config.properties`.
     *   Open the `config.properties` file and replace the placeholder values with your MySQL username and password.
-2.  **Run the Application:**
-    *   You can run the application directly from your IDE or by using the following Maven command in your terminal:
+2. **JavaFX Configuration:**
+    *   First download this `https://download2.gluonhq.com/openjfx/21.0.9/openjfx-21.0.9_windows-x64_bin-sdk.zip` and unzip
+    *   Then add .vscode folder to project and create lunch.json file and paste this.
+        ```
+        {
+            "version": "0.2.0",
+            "configurations": [
+               {
+                  "type": "java",
+                  "name": "Run JavaFX App",
+                  "request": "launch",
+                  "mainClass": "com.gearrent.Main",
+                  "vmArgs": "--module-path D:/javafx/javafx-sdk-21.0.9/lib --add-modules javafx.controls,javafx.fxml"
+               }
+            ]
+        }
+        ```
+    * After that change this `D:/javafx/javafx-sdk-21.0.9/lib` according to your JavaFX jdk download location.
+3.  **Run the Application:**
+    *   Know You can run the application directly from your IDE or by using the following Maven command in your terminal:
         ```bash
         mvn javafx:run
         ```
